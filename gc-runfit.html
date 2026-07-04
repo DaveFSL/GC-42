@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GC 42.2 — Road to Gold Coast 2027</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{
+  --ink:#0B1220;        /* pre-dawn sky */
+  --panel:#121C2F;
+  --panel2:#182440;
+  --line:#22304D;
+  --text:#E6EDF5;
+  --muted:#7E8CA3;
+  --aqua:#38D6C9;       /* the Broadwater */
+  --coral:#FF7A59;      /* sunrise / quality */
+  --gold:#F5C548;       /* perfect week */
+  --sand:#E8DCC3;
+  --bad:#FF6B7A;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--ink);
+  color:var(--text);
+  font-family:'Archivo',system-ui,-apple-system,sans-serif;
+  font-variation-settings:'wdth' 100;
+  min-height:100vh;
+  padding-bottom:90px;
+}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--aqua);outline-offset:2px}
+input{font-family:inherit}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- header ---------- */
+header{
+  padding:calc(env(safe-area-inset-top, 0px) + 16px) 16px 10px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+}
+.brand{font-weight:900;font-variation-settings:'wdth' 118;letter-spacing:.5px;font-size:22px}
+.brand em{color:var(--aqua);font-style:normal}
+.countdown{font-size:12px;color:var(--muted);text-align:right;line-height:1.35}
+.countdown b{color:var(--sand);font-size:15px;display:block}
+
+/* ---------- horizon strip (signature) ---------- */
+.horizon-wrap{padding:6px 0 2px}
+.horizon-label{display:flex;justify-content:space-between;padding:0 16px 6px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.horizon{
+  display:flex;align-items:flex-end;gap:2px;height:64px;
+  overflow-x:auto;padding:0 16px 8px;scrollbar-width:none;
+}
+.horizon::-webkit-scrollbar{display:none}
+.hbar{
+  flex:0 0 10px;border-radius:2px 2px 0 0;background:var(--line);
+  position:relative;min-height:6px;transition:background .15s;
+}
+.hbar.base{background:#2A4C63}
+.hbar.launch{background:#2F6B72}
+.hbar.block{background:#1F7F7A}
+.hbar.hol::after{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gold)}
+.hbar.race{background:var(--coral)}
+.hbar.done-100{background:var(--gold)}
+.hbar.done-ok{background:var(--aqua)}
+.hbar.done-low{background:var(--bad)}
+.hbar.current{outline:2px solid var(--sand);outline-offset:1px}
+.hbar.viewing{outline:2px solid var(--aqua);outline-offset:1px}
+
+/* ---------- week card ---------- */
+.wrap{padding:0 16px;max-width:640px;margin:0 auto}
+.weeknav{display:flex;align-items:center;gap:8px;margin:10px 0 12px}
+.weeknav .nav{
+  width:42px;height:42px;border-radius:12px;background:var(--panel);border:1px solid var(--line);
+  font-size:18px;color:var(--sand);flex:0 0 auto;
+}
+.weeknav .title{flex:1;text-align:center}
+.weeknav .title h2{font-size:17px;font-weight:800;font-variation-settings:'wdth' 110}
+.weeknav .title .dates{font-size:12px;color:var(--muted);margin-top:2px}
+.today-btn{
+  font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--aqua);
+  border:1px solid var(--aqua);border-radius:20px;padding:5px 11px;flex:0 0 auto;
+}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;justify-content:center}
+.badge{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+.badge.phase{color:var(--aqua);border-color:rgba(56,214,201,.4)}
+.badge.hol{color:var(--gold);border-color:rgba(245,197,72,.4)}
+.badge.race{color:var(--coral);border-color:rgba(255,122,89,.5)}
+.badge.cut{color:var(--sand);border-color:rgba(232,220,195,.35)}
+
+/* score panel */
+.score-panel{
+  display:flex;align-items:center;gap:14px;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px;
+}
+.ring{position:relative;width:74px;height:74px;flex:0 0 auto}
+.ring svg{transform:rotate(-90deg)}
+.ring .pct{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:17px;font-variation-settings:'wdth' 110;
+}
+.score-info{flex:1;min-width:0}
+.score-info .verdict{font-weight:800;font-size:15px;margin-bottom:3px}
+.score-info .detail{font-size:12px;color:var(--muted);line-height:1.45}
+.score-info .kms{font-size:12px;color:var(--sand);margin-top:5px}
+
+/* sessions */
+.session{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;
+}
+.session.today-hl{border-color:var(--aqua);background:var(--panel2)}
+.session.done{opacity:.92;border-color:rgba(56,214,201,.35)}
+.daychip{
+  flex:0 0 auto;width:44px;text-align:center;padding:6px 0;border-radius:9px;
+  font-size:11px;font-weight:800;letter-spacing:1px;background:var(--panel2);
+  border:1px solid var(--line);color:var(--muted);
+}
+.session.type-quality .daychip{color:var(--coral);border-color:rgba(255,122,89,.4)}
+.session.type-long .daychip{color:var(--gold);border-color:rgba(245,197,72,.4)}
+.session.type-maf .daychip{color:var(--aqua);border-color:rgba(56,214,201,.35)}
+.s-main{flex:1;min-width:0}
+.s-title{font-weight:800;font-size:14.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.s-target{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}
+.s-log{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.km-input{
+  width:74px;background:var(--ink);border:1px solid var(--line);border-radius:9px;
+  color:var(--text);padding:8px;font-size:15px;text-align:center;font-weight:700;
+}
+.km-lbl{font-size:11px;color:var(--muted)}
+.done-btn{
+  flex:0 0 auto;width:40px;height:40px;border-radius:11px;border:1.5px solid var(--line);
+  font-size:17px;color:var(--muted);align-self:center;transition:all .15s;
+}
+.done-btn.on{background:var(--aqua);border-color:var(--aqua);color:#062421}
+.session.type-long .done-btn.on{background:var(--gold);border-color:var(--gold)}
+.session.type-quality .done-btn.on{background:var(--coral);border-color:var(--coral);color:#2A0E06}
+.weights-row{display:flex;gap:10px;margin-bottom:10px}
+.wt{
+  flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:var(--panel);border:1px dashed var(--line);border-radius:var(--radius);
+  padding:10px 14px;font-size:12.5px;color:var(--muted);
+}
+.wt .wcheck{width:32px;height:32px;border-radius:9px;border:1.5px solid var(--line);color:var(--muted);font-size:14px}
+.wt .wcheck.on{background:var(--sand);border-color:var(--sand);color:#1B1508}
+.note-card{
+  background:linear-gradient(135deg, rgba(255,122,89,.12), rgba(56,214,201,.08));
+  border:1px solid rgba(255,122,89,.3);border-radius:var(--radius);
+  padding:12px 14px;font-size:13px;line-height:1.5;margin-bottom:12px;color:var(--sand);
+}
+.maf-line{font-size:11.5px;color:var(--muted);text-align:center;margin:4px 0 14px}
+.maf-line b{color:var(--aqua)}
+
+/* overview + progress */
+.section-tabs{display:flex;gap:8px;margin:6px 0 14px}
+.stab{
+  flex:1;padding:10px;border-radius:12px;background:var(--panel);border:1px solid var(--line);
+  font-size:12px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);
+}
+.stab.on{color:var(--ink);background:var(--aqua);border-color:var(--aqua)}
+.ov-phase{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:16px 2px 8px}
+.ov-row{
+  width:100%;display:flex;align-items:center;gap:10px;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:7px;
+  text-align:left;font-size:13px;
+}
+.ov-row.current{border-color:var(--aqua)}
+.ov-wk{font-weight:900;color:var(--sand);width:52px;flex:0 0 auto;font-variation-settings:'wdth' 110}
+.ov-mid{flex:1;min-width:0}
+.ov-dates{color:var(--muted);font-size:11.5px}
+.ov-desc{margin-top:2px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov-km{flex:0 0 auto;color:var(--muted);font-size:12px}
+.ov-score{flex:0 0 auto;font-weight:900;font-size:12.5px;width:44px;text-align:right}
+.sc-gold{color:var(--gold)} .sc-ok{color:var(--aqua)} .sc-mid{color:var(--sand)} .sc-low{color:var(--bad)}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.stat .v{font-size:22px;font-weight:900;font-variation-settings:'wdth' 112}
+.stat .l{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:.5px}
+.hist-bars{display:flex;align-items:flex-end;gap:3px;height:80px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+.hist-bars .hb{flex:1;border-radius:3px 3px 0 0;min-height:4px}
+
+/* settings + footer nav */
+.settings-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:13px 14px;margin-bottom:10px;font-size:13.5px}
+.settings-row input{width:64px;background:var(--ink);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:7px;text-align:center;font-size:15px;font-weight:700}
+.io-btns{display:flex;gap:10px;margin-top:6px}
+.io-btns button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:13px;font-weight:700;color:var(--sand)}
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(11,18,32,.92);
+  backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  padding:8px 10px calc(env(safe-area-inset-bottom, 0px) + 8px);z-index:50;
+}
+.tabbar button{
+  flex:1;padding:9px 4px;font-size:11px;font-weight:800;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--muted);border-radius:10px;
+}
+.tabbar button.on{color:var(--aqua)}
+.hidden{display:none}
+.footnote{font-size:11px;color:var(--muted);line-height:1.55;padding:4px 2px 20px}
+.toast{
+  position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 76px);
+  background:var(--panel2);border:1.5px solid var(--aqua);border-radius:14px;
+  padding:14px 16px;z-index:60;font-size:14px;line-height:1.5;max-width:600px;margin:0 auto;
+  box-shadow:0 10px 34px rgba(0,0,0,.55);animation:toastpop .3s ease;
+}
+.toast.gold{border-color:var(--gold);background:linear-gradient(135deg, rgba(245,197,72,.16), var(--panel2))}
+@keyframes toastpop{from{transform:translateY(14px);opacity:0}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">GC <em>42.2</em></div>
+  <div class="countdown"><b id="cd-days">—</b>days to Gold Coast · Sun 4 July 2027 · <span id="goalpace">goal 5:41/km</span></div>
+</header>
+
+<div class="horizon-wrap" id="horizonWrap">
+  <div class="horizon-label"><span>Base · Aug '26</span><span>The 44-week horizon — tap any week</span><span>Race · Jul '27</span></div>
+  <div class="horizon" id="horizon" role="tablist" aria-label="All training weeks"></div>
+</div>
+
+<div class="wrap">
+  <div id="view-week"></div>
+  <div id="view-plan" class="hidden"></div>
+  <div id="view-progress" class="hidden"></div>
+  <div id="view-settings" class="hidden"></div>
+</div>
+
+<nav class="tabbar">
+  <button id="tab-week" class="on" onclick="setTab('week')">This week</button>
+  <button id="tab-plan" onclick="setTab('plan')">Full plan</button>
+  <button id="tab-progress" onclick="setTab('progress')">Progress</button>
+  <button id="tab-settings" onclick="setTab('settings')">Setup</button>
+</nav>
+
+<script>
+/* ================= DATA ================= */
+const RACE_DATE = new Date(2027, 6, 4); // 4 July 2027
+
+// helper to build a week
+function W(monday, phase, total, tue, thuKm, thuTitle, thuDesc, sun, sunDesc, opts={}){
+  const sat = Math.round((total - tue - thuKm - sun)*10)/10;
+  return Object.assign({monday, phase, total, runs:[
+    {day:'TUE', type:'maf',    title:'MAF easy',   km:tue,  desc:'Heart rate at or under your MAF cap. Slow is the job.'},
+    {day:'THU', type:'quality',title:thuTitle,     km:thuKm,desc:thuDesc},
+    {day:'SAT', type:'maf',    title:'MAF easy',   km:Math.max(sat,3), desc:'Short and genuinely easy — this run protects tomorrow.'},
+    {day:'SUN', type:'long',   title:'Long run',   km:sun,  desc:sunDesc}
+  ]}, opts);
+}
+
+const S_STRIDE = 'Easy MAF run, finish with 4–6 × 20-sec relaxed strides, full recovery.';
+const S_EASY   = 'All easy at MAF. No structure this week.';
+
+const WEEKS = [
+/* ---------- PHASE 1: BASE (Sept – mid Dec 2026) ---------- */
+W('2026-08-31','Base', 24, 5, 6,'MAF + relax','All MAF. First week back after Surefoot recovery.',10,'Flat and easy. Re-establish the Sunday habit.'),
+W('2026-09-07','Base', 26, 6, 6,'MAF easy',S_EASY,10,'Easy throughout.'),
+W('2026-09-14','Base', 26, 5, 6,'MAF easy',S_EASY,12,'Easy throughout.'),
+W('2026-09-21','Base', 28, 6, 7,'MAF easy',S_EASY,12,'Easy throughout.',{hol:'September holidays'}),
+W('2026-09-28','Base', 28, 6, 7,'MAF easy',S_EASY,12,'Optional 5th short run this week if fresh — never forced.',{hol:'September holidays'}),
+W('2026-10-05','Base', 29, 5, 7,'MAF + strides',S_STRIDE,13,'Easy throughout.'),
+W('2026-10-12','Base', 30, 5, 7,'MAF + strides',S_STRIDE,14,'Easy throughout.'),
+W('2026-10-19','Base', 30, 5, 7,'MAF + strides',S_STRIDE,14,'Easy throughout.'),
+W('2026-10-26','Base', 32, 6, 8,'MAF + strides',S_STRIDE,14,'Easy throughout.'),
+W('2026-11-02','Base', 32, 5, 8,'MAF + strides',S_STRIDE,15,'Easy throughout.'),
+W('2026-11-09','Base', 33, 6, 8,'MAF + strides',S_STRIDE,15,'Easy throughout.'),
+W('2026-11-16','Base', 34, 6, 8,'MAF + strides',S_STRIDE,16,'Easy throughout.'),
+W('2026-11-23','Base', 35, 6, 8,'MAF + strides',S_STRIDE,16,'Sat swap: parkrun benchmark. Honest effort, not eyeballs-out.',{note:'BENCHMARK #1 — parkrun this Saturday. On-track: ~26:30 or better.'}),
+W('2026-11-30','Base', 36, 7, 9,'MAF + strides',S_STRIDE,16,'Easy throughout.',{note:'📝 GC Marathon 2027 entries open early December — early-bird was $99 last year and it\'s the cheapest it will ever be. Join the Brisbane Half waitlist while you\'re at it.'}),
+W('2026-12-07','Base', 37, 6, 9,'MAF + strides',S_STRIDE,17,'Easy throughout.',{hol:'Summer holidays (BCE)', note:'📝 Entry check: signed up for Gold Coast yet? Don\'t let early-bird pricing lap you.'}),
+/* ---------- PHASE 2: SUMMER LAUNCHPAD ---------- */
+W('2026-12-14','Launchpad', 38, 6, 9,'10km time trial','BENCHMARK #2. Warm up 2km, then 10km at honest race effort.',18,'Easy. Pre-dawn start — heat rules apply.',{hol:'Summer holidays', note:'BENCHMARK #2 — 10km time trial. On-track for sub-4: under 55:00.'}),
+W('2026-12-21','Launchpad', 34, 6, 7,'MAF easy','Christmas week. Easy everything, enjoy the food.',14,'Relaxed. Family first this week.',{hol:'Summer holidays'}),
+W('2026-12-28','Launchpad', 38, 6, 9,'20-min tempo','2km easy, 20 min comfortably hard (able to say short sentences), 2km easy.',18,'Easy at MAF. Fuel and hydrate — it is hot.',{hol:'Summer holidays'}),
+W('2027-01-04','Launchpad', 40, 7,10,'MAF + strides',S_STRIDE,18,'Easy. Practise pre-run breakfast timing.',{hol:'Summer holidays'}),
+W('2027-01-11','Launchpad', 40, 6,10,'20-min tempo','2km easy, 20 min comfortably hard, 2km easy.',18,'Easy at MAF.',{hol:'Summer holidays'}),
+W('2027-01-18','Launchpad', 42, 8,10,'MAF + strides',S_STRIDE,18,'Last big launchpad run. You should feel strong here.',{hol:'Summer holidays'}),
+W('2027-01-25','Launchpad', 30, 5, 7,'MAF easy','Deliberately light — school resumes 27 Jan.',14,'Short and social. Arrive at the block fresh, not cooked.',{note:'Light by design. The 22-week marathon block starts Monday.'}),
+/* ---------- PHASE 3: MARATHON BLOCK (22 weeks) ---------- */
+W('2027-02-01','Survival', 36, 7, 8,'Strides session','Easy run with 6 × 30-sec strides, full recovery jogs.',16,'Easy long run. Block week 1 — nothing heroic.',{blockWk:1}),
+W('2027-02-08','Survival', 32, 6, 7,'Easy (camp-proof)','Easy MAF only. If camp eats this week, run what you can and move on.',14,'Flexible — shift to any day that works.',{blockWk:2, note:'Camp-proof week. A 3-run week with the long run intact still scores a win.'}),
+W('2027-02-15','Survival', 36, 7, 8,'20-min tempo','2km easy, 20 min comfortably hard, 2km easy.',16,'Easy at MAF.',{blockWk:3}),
+W('2027-02-22','Build', 38, 6, 9,'5 × 800m','At {INT800}/km with 400m jog recoveries. 2km warm-up/down.',18,'Easy at MAF.',{blockWk:4}),
+W('2027-03-01','Build', 40, 6, 9,'25-min tempo','2km easy, 25 min comfortably hard, 2km easy.',20,'Easy at MAF.',{blockWk:5}),
+W('2027-03-08','Build', 42, 5,10,'5 × 1km','At {INT1K}/km with 400m jog recoveries.',22,'Easy at MAF. Start carrying fluids.',{blockWk:6}),
+W('2027-03-15','Build', 36, 6, 7,'Easy + strides',S_STRIDE,18,'Cutback — easy everything.',{blockWk:7, cutback:true}),
+W('2027-03-22','Build', 44, 5,10,'30-min tempo','2km easy, 30 min comfortably hard, 2km easy.',24,'Last 4km at marathon pace ({MP}). First gel practice today.',{blockWk:8}),
+W('2027-03-29','Holiday peak', 46, 5,10,'6 × 1km','At {INT1KF}/km, 400m jog recoveries.',26,'Fuel every 30 min from 60 min in.',{blockWk:9, hol:'Easter holidays'}),
+W('2027-04-05','Holiday peak', 48, 5,10,'35-min tempo','2km easy, 35 min comfortably hard, 2km easy.',28,'Biggest run so far. Full fuelling practice.',{blockWk:10, hol:'Easter holidays'}),
+W('2027-04-12','Holiday peak', 38, 5, 8,'Easy + strides',S_STRIDE,20,'Cutback — absorb the holiday block.',{blockWk:11, cutback:true}),
+W('2027-04-19','Specific', 46, 4,12,'3 × 3km at MP','At {MP} with 1km float (easy jog) between.',26,'Middle 8km at marathon pace.',{blockWk:12}),
+W('2027-04-26','Specific', 48, 5,10,'30-min tempo','2km easy, 30 min comfortably hard, 2km easy.',28,'Easy at MAF. Gels every 30 min.',{blockWk:13}),
+W('2027-05-03','Specific', 40, 5, 8,'Easy + strides',S_STRIDE,22,'Cutback — easy everything.',{blockWk:14, cutback:true}),
+W('2027-05-10','Specific', 50, 4,13,'2 × 5km at MP','At {MP} with 1km float between.',30,'Easy at MAF. Rehearse race breakfast 3hrs before.',{blockWk:15}),
+W('2027-05-17','Specific', 48, 4,11,'4 × 2km','At {CRUISE}/km, 600m jog recoveries.',28,'Easy at MAF.',{blockWk:16}),
+W('2027-05-24','Specific', 54, 4, 9,'25-min tempo','2km easy, 25 min comfortably hard, 2km easy.',32,'PEAK LONG RUN. Last 10km at MP. Full race-day dress rehearsal — kit, breakfast, gels.',{blockWk:17, note:'Peak week. The 32km Sunday is the single most important run of the block.'}),
+W('2027-05-31','Specific', 40, 6, 8,'3 × 1km at MP','Mini-taper week. Everything else very easy.',21.1,'BRISBANE MARATHON FESTIVAL HALF — race it. Target {HALF}.',{blockWk:18, race:'Brisbane Half · Sun 6 June', note:'BENCHMARK #3 — the go/no-go for your goal. Under {HALFHI} = green light.'}),
+W('2027-06-07','Taper', 42, 4,10,'3 × 2km at MP','Only once legs feel recovered from the half — Thursday at the earliest.',24,'Easy. Absorbing the race, not chasing fitness.',{blockWk:19}),
+W('2027-06-14','Taper', 42, 6,10,'2 × 3km at MP','At {MP} with 1km float.',22,'Easy at MAF.',{blockWk:20}),
+W('2027-06-21','Taper', 32, 5, 8,'MP touches','20 min easy with 3 × 4-min at MP inside it.',14,'Short, easy, done by breakfast.',{blockWk:21, hol:'Winter holidays from 26 Jun'}),
+W('2027-06-28','Race week', 18, 8, 5,'5km very easy','Nothing to gain now, plenty to lose. Feet up.',42.2,'RACE DAY — Gold Coast Marathon, 6:15am. {RACE10} to 10km, {MPnum} to 32km, then race.',{blockWk:22, race:'GOLD COAST MARATHON · Sun 4 July', hol:'Winter holidays',
+  note:'Sat: 3km shakeout with 2 strides. Carb-load Fri/Sat. Throwaway layer for the cold start.'}),
+];
+// race-week Sat shakeout: adjust auto-calculated Sat km
+WEEKS[WEEKS.length-1].runs[2].km = 3;
+WEEKS[WEEKS.length-1].runs[2].desc = 'Shakeout: 3km + 2 relaxed strides. Lay out race kit tonight.';
+
+const PHASE_INFO = {
+  'Base':'Almost all running at MAF heart rate. Boring on purpose — this is the engine build.',
+  'Launchpad':'Summer holidays = time. Volume climbs, first tempo work appears. Beat the heat: run pre-dawn, obey the HR cap, ignore pace.',
+  'Survival':'Camp and Term 1 chaos. Modest, interchangeable weeks. Zero catch-up if one goes missing.',
+  'Build':'The climb begins. One quality session, long run growing every fortnight.',
+  'Holiday peak':'Easter holidays — the two biggest volume weeks so far while you have time to recover.',
+  'Specific':'Marathon pace becomes the star. This stage is where sub-4 is built.',
+  'Taper':'Fitness is banked. The taper is where it turns into race performance — trust it.',
+  'Race week':'Run for the good times.'
+};
+
+/* ================= STATE ================= */
+const KEY='gcRunfit2027';
+let mem={};
+function loadState(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return mem; } }
+function saveState(s, opts={}){
+  if(!opts.quiet){ s.updatedAt=Date.now(); }
+  try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){ mem=s; }
+  if(!opts.quiet){ scheduleSync(); }
+}
+let state = loadState();
+state.log = state.log || {};        // { weekIdx: { r0:{done,km}, r1:..., w0:bool, w1:bool } }
+state.age = state.age || 50;
+state.mafBonus = (state.mafBonus===undefined) ? true : state.mafBonus;
+state.goalMin = state.goalMin || 240;   // goal finish time in minutes (4:00 default)
+state.sync = state.sync || {token:'', gistId:'', auto:true};
+
+/* ---- cross-device sync via private GitHub Gist ---- */
+let syncTimer=null, syncStatus='Off — add a token below to turn on';
+const GIST_FILE='gc-runfit-data.json';
+function hdrs(){ return {'Authorization':'Bearer '+state.sync.token, 'Accept':'application/vnd.github+json', 'Content-Type':'application/json'}; }
+function syncPayload(){ return JSON.stringify({log:state.log, age:state.age, mafBonus:state.mafBonus, goalMin:state.goalMin, updatedAt:state.updatedAt||0}); }
+function setSyncStatus(t){ syncStatus=t; const el=document.getElementById('syncStatus'); if(el) el.textContent=t; }
+function scheduleSync(){ if(!state.sync.token || !state.sync.auto) return; clearTimeout(syncTimer); syncTimer=setTimeout(pushToGist, 2500); }
+async function pushToGist(){
+  if(!state.sync.token) return;
+  setSyncStatus('Saving to cloud…');
+  try{
+    let res;
+    if(state.sync.gistId){
+      res=await fetch('https://api.github.com/gists/'+state.sync.gistId, {method:'PATCH', headers:hdrs(),
+        body:JSON.stringify({files:{[GIST_FILE]:{content:syncPayload()}}})});
+    } else {
+      res=await fetch('https://api.github.com/gists', {method:'POST', headers:hdrs(),
+        body:JSON.stringify({description:'GC RunFit — training log sync', public:false, files:{[GIST_FILE]:{content:syncPayload()}}})});
+      if(res.ok){ const j=await res.json(); state.sync.gistId=j.id; saveState(state,{quiet:true}); }
+    }
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    setSyncStatus('Synced ✓ '+new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}));
+    const g=document.getElementById('gistIdRow'); if(g) g.textContent=state.sync.gistId;
+  }catch(e){ setSyncStatus('Sync failed — check token & connection ('+e.message+')'); }
+}
+async function pullFromGist(manual){
+  if(!state.sync.token){ if(manual) setSyncStatus('Add a token first'); return; }
+  if(!state.sync.gistId){ pushToGist(); return; }   // first ever sync from this account: create the gist
+  setSyncStatus('Checking cloud…');
+  try{
+    const res=await fetch('https://api.github.com/gists/'+state.sync.gistId, {headers:hdrs()});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const j=await res.json();
+    const f=j.files && j.files[GIST_FILE];
+    if(f && f.content){
+      const remote=JSON.parse(f.content);
+      if((remote.updatedAt||0) > (state.updatedAt||0)){
+        state.log=remote.log||{}; if(remote.age) state.age=remote.age;
+        if(remote.mafBonus!==undefined) state.mafBonus=remote.mafBonus;
+        if(remote.goalMin) state.goalMin=remote.goalMin;
+        state.updatedAt=remote.updatedAt;
+        saveState(state,{quiet:true}); render();
+        setSyncStatus('Pulled latest from cloud ✓'); return;
+      }
+    }
+    setSyncStatus('Up to date ✓');
+    if(manual && (state.updatedAt||0)>0) pushToGist();
+  }catch(e){ setSyncStatus('Sync failed ('+e.message+')'); }
+}
+function setSyncField(k,v){ state.sync[k]=v.trim(); saveState(state,{quiet:true}); if(k==='token'&&v) pullFromGist(true); }
+function toggleAutoSync(){ state.sync.auto=!state.sync.auto; saveState(state,{quiet:true}); render(); }
+
+function mafHR(){ return 180 - state.age + (state.mafBonus?5:0); }
+
+/* ---- goal pace system ---- */
+function mp(){ return Math.round(state.goalMin*60/42.195); }          // marathon pace, sec/km
+function pf(sec){ sec=Math.max(120,Math.round(sec)); const m=Math.floor(sec/60); return m+':'+String(sec%60).padStart(2,'0'); }
+function goalTimeStr(){ const h=Math.floor(state.goalMin/60); return h+':'+String(state.goalMin%60).padStart(2,'0'); }
+function hm(mins){ const h=Math.floor(mins/60); return h+':'+String(Math.round(mins%60)).padStart(2,'0'); }
+function fmtDesc(t){
+  const M=mp();
+  return t
+    .replace(/{MPnum}/g, pf(M))
+    .replace(/{MP}/g, pf(M)+'/km')
+    .replace(/{RACE10}/g, pf(M+3)+'/km')
+    .replace(/{INT800}/g, pf(M-41)+'–'+pf(M-31))
+    .replace(/{INT1KF}/g, pf(M-36))
+    .replace(/{INT1K}/g, pf(M-36)+'–'+pf(M-26))
+    .replace(/{CRUISE}/g, pf(M-21)+'–'+pf(M-11))
+    .replace(/{HALFHI}/g, hm(state.goalMin/2-5))
+    .replace(/{HALF}/g, hm(state.goalMin/2-8)+'–'+hm(state.goalMin/2-5));
+}
+
+/* ---- motivation ---- */
+const LONG_MSGS=[
+  '🌊 Long run banked. The Broadwater just got a little closer.',
+  '🔧 Sunday km are where the engine gets built. Nice work.',
+  '🏦 That\'s this week\'s deposit in the marathon bank. Compound interest applies.',
+  '🐢 Legs: tired. Aerobic base: thriving. Exactly as prescribed.',
+  '💪 Kilometres like that don\'t care about motivation — consistency wins.',
+  '🍳 Big one done. Now eat like it\'s on the curriculum.',
+  '☀️ Another Sunday, another brick in the wall. Race-day you says thanks.'
+];
+const PERFECT_MSGS=[
+  '💯 <b>PERFECT WEEK.</b> Every run, every kilometre. Gold bar on the horizon.',
+  '👑 <b>100%.</b> The plan bows to you this week.',
+  '🏁 <b>Full house — four from four.</b> Somewhere on the Gold Coast, a finish line just flinched.',
+  '✏️ <b>100%.</b> Teacher\'s verdict: A+. No corrections needed.',
+  '🧱 <b>Perfect week.</b> This is exactly how a big goal gets built — one boring, brilliant week at a time.'
+];
+let toastTimer;
+function showToast(msg, gold){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const d=document.createElement('div');
+  d.className='toast'+(gold?' gold':'');
+  d.innerHTML=msg;
+  d.onclick=()=>d.remove();
+  document.body.appendChild(d);
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>d.remove(), 5200);
+}
+const pick=(a)=>a[Math.floor(Math.random()*a.length)];
+
+/* ================= HELPERS ================= */
+function mondayOf(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
+function parseDate(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function fmtRange(mon){ const a=parseDate(mon); const b=new Date(a); b.setDate(b.getDate()+6);
+  const f=(d)=>d.toLocaleDateString('en-AU',{day:'numeric',month:'short'}); return f(a)+' – '+f(b); }
+function currentWeekIdx(){
+  const now = mondayOf(new Date());
+  for(let i=0;i<WEEKS.length;i++){ if(mondayOf(parseDate(WEEKS[i].monday)).getTime()===now.getTime()) return i; }
+  if(now < parseDate(WEEKS[0].monday)) return -1;           // pre-plan
+  if(now > parseDate(WEEKS[WEEKS.length-1].monday)) return WEEKS.length-1;
+  for(let i=WEEKS.length-1;i>=0;i--){ if(parseDate(WEEKS[i].monday)<=now) return i; }
+  return 0;
+}
+function weekScore(i){
+  const w=WEEKS[i], lg=state.log[i]||{};
+  let planned=0, credited=0, any=false;
+  w.runs.forEach((r,ri)=>{
+    planned += r.km;
+    const e=lg['r'+ri];
+    if(e && e.done){ any=true; const actual=(e.km===''||e.km===undefined||e.km===null)?r.km:parseFloat(e.km)||0; credited += Math.min(actual, r.km); }
+  });
+  if(!any) return null;
+  return Math.round(credited/planned*100);
+}
+function scoreClass(s){ return s>=100?'sc-gold': s>=85?'sc-ok': s>=60?'sc-mid':'sc-low'; }
+function scoreVerdict(s){
+  if(s>=100) return ['Perfect week — 100%','Every run done at full distance. Bank it and progress.'];
+  if(s>=85)  return ['On plan','Close enough to full credit. Progress to next week as scheduled.'];
+  if(s>=60)  return ['Close — move on','A solid week under real life. Progress, but consider repeating if it felt hard.'];
+  return ['Repeat this week','Under 60% — rule 1 applies: repeat this week before progressing. Never double up.'];
+}
+
+/* ================= RENDER: HORIZON ================= */
+let viewing = Math.max(currentWeekIdx(), 0);
+function renderHorizon(){
+  const cur=currentWeekIdx();
+  const maxT=Math.max(...WEEKS.map(w=>w.total));
+  const el=document.getElementById('horizon');
+  el.innerHTML='';
+  WEEKS.forEach((w,i)=>{
+    const b=document.createElement('button');
+    const h=Math.max(6, Math.round(w.total/maxT*56));
+    b.style.height=h+'px';
+    let cls='hbar '+(w.phase==='Base'?'base':w.phase==='Launchpad'?'launch':'block');
+    if(w.hol) cls+=' hol';
+    if(w.race) cls+=' race';
+    const s=weekScore(i);
+    if(s!==null && i<cur) cls += s>=100?' done-100': s>=60?' done-ok':' done-low';
+    if(i===cur) cls+=' current';
+    if(i===viewing) cls+=' viewing';
+    b.className=cls;
+    b.title='Week '+(i+1)+' · '+w.total+'km';
+    b.setAttribute('aria-label','Week '+(i+1)+', '+w.phase+', '+w.total+' kilometres');
+    b.onclick=()=>{ viewing=i; setTab('week'); render(); };
+    el.appendChild(b);
+  });
+  // keep viewing bar in sight
+  const bars=el.children; if(bars[viewing]) bars[viewing].scrollIntoView({inline:'center', block:'nearest'});
+}
+
+/* ================= RENDER: WEEK ================= */
+function weekLabel(i){
+  const w=WEEKS[i];
+  if(w.blockWk) return 'Block week '+w.blockWk+' of 22';
+  const baseIdx = WEEKS.filter((x,j)=>j<=i && !x.blockWk).length;
+  return 'Base week '+baseIdx+' of 22';
+}
+function renderWeek(){
+  const i=viewing, w=WEEKS[i], cur=currentWeekIdx();
+  const lg=state.log[i]||{};
+  const s=weekScore(i);
+  const live = s===null ? 0 : s;
+  const [verdict, vdetail] = s===null ? ['No runs logged yet','Tap ✓ on a session to log it. Distance defaults to the plan — edit if you ran more or less.'] : scoreVerdict(s);
+  const plannedKm = w.runs.reduce((a,r)=>a+r.km,0);
+  const doneKm = w.runs.reduce((a,r,ri)=>{ const e=lg['r'+ri]; if(!e||!e.done) return a;
+    const actual=(e.km===''||e.km===undefined)?r.km:parseFloat(e.km)||0; return a+actual; },0);
+  const todayName=['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
+  const circ = 2*Math.PI*31;
+
+  let badges = `<span class="badge phase">${w.phase}</span>`;
+  if(w.hol) badges+=`<span class="badge hol">☀ ${w.hol}</span>`;
+  if(w.cutback) badges+=`<span class="badge cut">Cutback</span>`;
+  if(w.race) badges+=`<span class="badge race">★ ${w.race}</span>`;
+
+  const wtHtml = ['WED','FRI'].map((d,wi)=>{
+    const on = !!lg['w'+wi];
+    return `<div class="wt"><span>${d} · Weights — upper + 10-min runner's lower</span>
+      <button class="wcheck ${on?'on':''}" aria-label="Toggle ${d} weights" onclick="toggleWt(${i},${wi})">${on?'✓':''}</button></div>`;
+  }).join('');
+
+  const runsHtml = w.runs.map((r,ri)=>{
+    const e=lg['r'+ri]||{};
+    const isToday = (i===cur && r.day===todayName);
+    const kmVal = (e.km===undefined||e.km===null)?'':e.km;
+    return `<div class="session type-${r.type} ${e.done?'done':''} ${isToday?'today-hl':''}">
+      <div class="daychip">${r.day}</div>
+      <div class="s-main">
+        <div class="s-title">${r.title} <span style="color:var(--muted);font-weight:600">· ${r.km}km</span></div>
+        <div class="s-target">${fmtDesc(r.desc)}${r.type==='long'?' <em style="color:var(--muted)">(swap to Sat freely)</em>':''}</div>
+        <div class="s-log">
+          <input class="km-input" type="number" inputmode="decimal" min="0" step="0.1" placeholder="${r.km}"
+            value="${kmVal}" aria-label="Actual kilometres for ${r.day}" onchange="setKm(${i},${ri},this.value)">
+          <span class="km-lbl">km actual</span>
+        </div>
+      </div>
+      <button class="done-btn ${e.done?'on':''}" aria-label="Mark ${r.day} ${r.title} done" onclick="toggleRun(${i},${ri})">${e.done?'✓':''}</button>
+    </div>`;
+  }).join('');
+
+  document.getElementById('view-week').innerHTML = `
+    <div class="weeknav">
+      <button class="nav" onclick="nav(-1)" aria-label="Previous week">‹</button>
+      <div class="title"><h2>${weekLabel(i)}</h2><div class="dates">${fmtRange(w.monday)} · ${plannedKm.toFixed(plannedKm%1?1:0)}km planned</div></div>
+      <button class="nav" onclick="nav(1)" aria-label="Next week">›</button>
+    </div>
+    <div style="text-align:center;margin-bottom:10px">${i!==cur && cur>=0 ? '<button class="today-btn" onclick="goToday()">Jump to this week</button>':''}</div>
+    <div class="badges">${badges}</div>
+    ${w.note?`<div class="note-card">${fmtDesc(w.note)}</div>`:''}
+    <div class="score-panel">
+      <div class="ring">
+        <svg width="74" height="74" viewBox="0 0 74 74">
+          <circle cx="37" cy="37" r="31" fill="none" stroke="var(--line)" stroke-width="7"/>
+          <circle cx="37" cy="37" r="31" fill="none" stroke="${live>=100?'var(--gold)':live>=60?'var(--aqua)':'var(--coral)'}"
+            stroke-width="7" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-Math.min(live,100)/100)}"/>
+        </svg>
+        <div class="pct">${s===null?'—':live+'%'}</div>
+      </div>
+      <div class="score-info">
+        <div class="verdict">${verdict}</div>
+        <div class="detail">${vdetail}</div>
+        <div class="kms">${doneKm.toFixed(doneKm%1?1:0)} / ${plannedKm.toFixed(plannedKm%1?1:0)}km logged</div>
+      </div>
+    </div>
+    <div class="maf-line">MAF cap: <b>${mafHR()} bpm</b> (180 − ${state.age}${state.mafBonus?' + 5':''}) · goal ${goalTimeStr()} → MP <b>${pf(mp())}/km</b></div>
+    ${runsHtml}
+    <div class="weights-row">${wtHtml}</div>
+    <p class="footnote">Score counts the four runs only (min of actual vs planned km — extra km never inflates it). Weights are tracked but don't move the percentage. Priority when time is short: long run › quality › MAF runs › weights.</p>
+  `;
+}
+
+/* ================= RENDER: FULL PLAN ================= */
+function renderPlan(){
+  const cur=currentWeekIdx();
+  let html='', lastPhase='';
+  WEEKS.forEach((w,i)=>{
+    if(w.phase!==lastPhase){
+      lastPhase=w.phase;
+      html+=`<div class="ov-phase">${w.phase} — ${PHASE_INFO[w.phase]||''}</div>`;
+    }
+    const s=weekScore(i);
+    const key = w.runs[1].title.replace('MAF + relax','MAF').replace('MAF easy','all easy');
+    html+=`<button class="ov-row ${i===cur?'current':''}" onclick="viewing=${i};setTab('week');render()">
+      <span class="ov-wk">W${i+1}</span>
+      <span class="ov-mid">
+        <span class="ov-dates">${fmtRange(w.monday)}${w.hol?' · ☀':''}${w.race?' · ★ '+w.race:''}</span>
+        <div class="ov-desc">${w.runs[3].km}km long · ${key}</div>
+      </span>
+      <span class="ov-km">${w.total}km</span>
+      <span class="ov-score ${s===null?'':scoreClass(s)}">${s===null?(i<cur?'·':''):s+'%'}</span>
+    </button>`;
+  });
+  document.getElementById('view-plan').innerHTML =
+    `<p class="footnote" style="padding-top:8px">Every week, all the way to race day — tap any row to open it. ☀ marks school holidays, ★ marks races. Missed a week? Repeat the previous one; never jump ahead.</p>`+html;
+}
+
+/* ================= RENDER: PROGRESS ================= */
+function renderProgress(){
+  const cur=currentWeekIdx();
+  let plannedToDate=0, loggedToDate=0, perfect=0, scored=0, scoreSum=0;
+  const bars=[];
+  WEEKS.forEach((w,i)=>{
+    const s=weekScore(i);
+    if(i<=cur){ plannedToDate += w.runs.reduce((a,r)=>a+r.km,0); }
+    if(s!==null){
+      const lg=state.log[i]||{};
+      loggedToDate += w.runs.reduce((a,r,ri)=>{const e=lg['r'+ri]; if(!e||!e.done)return a;
+        const actual=(e.km===''||e.km===undefined)?r.km:parseFloat(e.km)||0; return a+actual;},0);
+      scored++; scoreSum+=s; if(s>=100) perfect++;
+      bars.push({i,s});
+    }
+  });
+  const avg = scored? Math.round(scoreSum/scored) : null;
+  const barHtml = bars.length ? bars.slice(-16).map(b=>{
+    const c = b.s>=100?'var(--gold)':b.s>=60?'var(--aqua)':'var(--coral)';
+    return `<div class="hb" style="height:${Math.max(6,b.s*0.56)}px;background:${c}" title="Week ${b.i+1}: ${b.s}%"></div>`;
+  }).join('') : '<div style="color:var(--muted);font-size:12px;align-self:center;width:100%;text-align:center">Weekly scores will appear here once you start logging.</div>';
+  document.getElementById('view-progress').innerHTML = `
+    <div class="stat-grid" style="margin-top:12px">
+      <div class="stat"><div class="v">${loggedToDate.toFixed(0)}<span style="font-size:13px;color:var(--muted)"> km</span></div><div class="l">Total logged</div></div>
+      <div class="stat"><div class="v">${avg===null?'—':avg+'%'}</div><div class="l">Average weekly score</div></div>
+      <div class="stat"><div class="v" style="color:var(--gold)">${perfect}</div><div class="l">Perfect weeks (100%)</div></div>
+      <div class="stat"><div class="v">${scored}<span style="font-size:13px;color:var(--muted)"> / ${WEEKS.length}</span></div><div class="l">Weeks with runs logged</div></div>
+    </div>
+    <div class="ov-phase">Last 16 scored weeks</div>
+    <div class="hist-bars">${barHtml}</div>
+    <div class="ov-phase" style="margin-top:18px">Benchmarks</div>
+    <div class="ov-row" style="cursor:default"><span class="ov-wk">#1</span><span class="ov-mid"><span class="ov-dates">Late Nov 2026</span><div class="ov-desc">parkrun — on-track: ~26:30</div></span></div>
+    <div class="ov-row" style="cursor:default"><span class="ov-wk">#2</span><span class="ov-mid"><span class="ov-dates">Pre-Christmas 2026</span><div class="ov-desc">10km time trial — on-track: sub-55:00</div></span></div>
+    <div class="ov-row" style="cursor:default"><span class="ov-wk">#3</span><span class="ov-mid"><span class="ov-dates">Sun 6 June 2027</span><div class="ov-desc">Brisbane Half — go/no-go: ${fmtDesc('{HALF}')}</div></span></div>
+  `;
+}
+
+/* ================= RENDER: SETTINGS ================= */
+function renderSettings(){
+  document.getElementById('view-settings').innerHTML = `
+    <div class="ov-phase" style="margin-top:12px">Goal time</div>
+    <div class="settings-row"><span>Marathon goal</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="wcheck" style="width:36px;height:36px;border-radius:10px;font-size:18px" aria-label="Goal 5 minutes faster" onclick="bumpGoal(-5)">−</button>
+        <b style="font-size:17px;min-width:52px;text-align:center">${goalTimeStr()}</b>
+        <button class="wcheck" style="width:36px;height:36px;border-radius:10px;font-size:18px" aria-label="Goal 5 minutes slower" onclick="bumpGoal(5)">+</button>
+      </div></div>
+    <div class="note-card">Goal <b>${goalTimeStr()}</b> = race pace <b>${pf(mp())}/km</b>. Every MP session, interval target, race-day split and the Brisbane Half go/no-go (${fmtDesc('{HALF}')}) update automatically. Adjust after each benchmark — the plan flexes, the goal stays honest.</div>
+    <div class="ov-phase" style="margin-top:12px">MAF heart rate</div>
+    <div class="settings-row"><span>Your age</span>
+      <input type="number" inputmode="numeric" min="18" max="80" value="${state.age}" onchange="setAge(this.value)"></div>
+    <div class="settings-row"><span>+5 adjustment (2+ yrs consistent, injury-free)</span>
+      <button class="wcheck ${state.mafBonus?'on':''}" style="width:36px;height:36px;border-radius:10px;border:1.5px solid var(--line)" onclick="toggleBonus()">${state.mafBonus?'✓':''}</button></div>
+    <div class="note-card">Your MAF cap is <b>${mafHR()} bpm</b>. Every MAF run and most long-run kilometres stay at or under this number.</div>
+    <div class="ov-phase">Cross-device sync (optional)</div>
+    <div class="settings-row"><span>GitHub token</span>
+      <input type="password" style="width:150px;text-align:left" placeholder="ghp_…" value="${state.sync.token}"
+        autocomplete="off" onchange="setSyncField('token',this.value)"></div>
+    <div class="settings-row"><span>Auto-sync after every change</span>
+      <button class="wcheck ${state.sync.auto?'on':''}" style="width:36px;height:36px;border-radius:10px;border:1.5px solid var(--line)" onclick="toggleAutoSync()">${state.sync.auto?'✓':''}</button></div>
+    <div class="settings-row"><span>Status</span><span id="syncStatus" style="color:var(--muted);font-size:12px;text-align:right;max-width:60%">${syncStatus}</span></div>
+    <div class="io-btns" style="margin-bottom:10px"><button onclick="pullFromGist(true)">Sync now</button></div>
+    <div class="note-card" style="font-size:12px">Syncs your log to a <b>private Gist</b> on your GitHub account. Setup once: GitHub → Settings → Developer settings → Personal access tokens → <b>Tokens (classic)</b> → generate with only the <b>gist</b> scope ticked. Paste it here on each device — the first device creates the sync file (ID: <b id="gistIdRow">${state.sync.gistId||'created on first sync'}</b>), the second finds it automatically once you paste the same token and enter that ID below if asked. Latest change wins across devices.</div>
+    <div class="settings-row"><span>Gist ID (auto-filled)</span>
+      <input type="text" style="width:150px;text-align:left" placeholder="from device 1" value="${state.sync.gistId}"
+        autocomplete="off" onchange="setSyncField('gistId',this.value)"></div>
+    <div class="ov-phase">Backup</div>
+    <div class="io-btns">
+      <button onclick="exportData()">Export data</button>
+      <button onclick="document.getElementById('importFile').click()">Import data</button>
+    </div>
+    <input id="importFile" type="file" accept=".json" class="hidden" onchange="importData(this)">
+    <p class="footnote" style="margin-top:14px">Data saves automatically on this device. Export a backup before clearing your browser or switching phones — same JSON in/out as RunFit.</p>
+  `;
+}
+
+/* ================= ACTIONS ================= */
+function ensure(i){ state.log[i]=state.log[i]||{}; return state.log[i]; }
+function celebrate(i, before, ri, nowDone){
+  const after=weekScore(i);
+  if(after!==null && after>=100 && (before===null || before<100)) showToast(pick(PERFECT_MSGS), true);
+  else if(ri===3 && nowDone) showToast(pick(LONG_MSGS), false);
+}
+function toggleRun(i,ri){
+  const before=weekScore(i);
+  const lg=ensure(i); const e=lg['r'+ri]=lg['r'+ri]||{}; e.done=!e.done;
+  saveState(state); render();
+  celebrate(i, before, ri, e.done);
+}
+function setKm(i,ri,v){
+  const before=weekScore(i);
+  const lg=ensure(i); const e=lg['r'+ri]=lg['r'+ri]||{}; e.km=v; if(v!=='' && !e.done) e.done=true;
+  saveState(state); render();
+  celebrate(i, before, ri, e.done);
+}
+function bumpGoal(d){ state.goalMin=Math.min(Math.max(state.goalMin+d,180),330); saveState(state); render(); }
+function toggleWt(i,wi){ const lg=ensure(i); lg['w'+wi]=!lg['w'+wi]; saveState(state); render(); }
+function nav(d){ viewing=Math.min(Math.max(viewing+d,0),WEEKS.length-1); render(); }
+function goToday(){ viewing=Math.max(currentWeekIdx(),0); render(); }
+function setAge(v){ state.age=Math.min(Math.max(parseInt(v)||50,18),80); saveState(state); render(); }
+function toggleBonus(){ state.mafBonus=!state.mafBonus; saveState(state); render(); }
+function exportData(){
+  const copy=JSON.parse(JSON.stringify(state));
+  if(copy.sync) delete copy.sync.token;   // never write the token to a backup file
+  const blob=new Blob([JSON.stringify(copy,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='gc-runfit-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+function importData(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(d && typeof d==='object'){
+    const keepToken = state.sync && state.sync.token;
+    state=d; state.log=state.log||{}; state.age=state.age||50;
+    state.sync=state.sync||{token:'',gistId:'',auto:true};
+    if(keepToken && !state.sync.token) state.sync.token=keepToken;
+    saveState(state); render(); } }catch(e){ alert('That file could not be read. Use a backup exported from this app.'); } };
+  r.readAsText(f);
+}
+
+/* ================= TABS + BOOT ================= */
+let tab='week';
+function setTab(t){
+  tab=t;
+  ['week','plan','progress','settings'].forEach(x=>{
+    document.getElementById('view-'+x).classList.toggle('hidden', x!==t);
+    document.getElementById('tab-'+x).classList.toggle('on', x===t);
+  });
+  document.getElementById('horizonWrap').classList.toggle('hidden', t==='settings');
+  render();
+}
+function render(){
+  const days=Math.max(0, Math.ceil((RACE_DATE - new Date())/86400000));
+  document.getElementById('cd-days').textContent = days;
+  document.getElementById('goalpace').textContent = 'goal '+goalTimeStr()+' · '+pf(mp())+'/km';
+  renderHorizon();
+  if(tab==='week') renderWeek();
+  if(tab==='plan') renderPlan();
+  if(tab==='progress') renderProgress();
+  if(tab==='settings') renderSettings();
+}
+render();
+if(state.sync && state.sync.token) pullFromGist(false);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && state.sync && state.sync.token) pullFromGist(false); });
+</script>
+</body>
+</html>

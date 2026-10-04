@@ -122,6 +122,13 @@ header{
   font-size:11px;font-weight:800;letter-spacing:1px;background:var(--panel2);
   border:1px solid var(--line);color:var(--muted);
 }
+.session.type-strength .daychip{color:var(--sand);border-color:rgba(232,220,195,.35)}
+.session.type-strength{border-style:dashed}
+.chk-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:12.5px;color:var(--text);line-height:1.4}
+.chk-row .wcheck{flex:0 0 auto;width:32px;height:32px;border-radius:9px;border:1.5px solid var(--line);color:var(--muted);font-size:14px}
+.chk-row .wcheck.on{background:var(--sand);border-color:var(--sand);color:#1B1508}
+.cs-btn{font-size:11px;padding:6px 10px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+.cs-btn.on{color:var(--ink);background:var(--sand);border-color:var(--sand)}
 .daychip-date{display:block;font-size:9px;font-weight:600;letter-spacing:0;opacity:.65;margin-top:2px}
 .session.type-quality .daychip{color:var(--coral);border-color:rgba(255,122,89,.4)}
 .session.type-long .daychip{color:var(--gold);border-color:rgba(245,197,72,.4)}
@@ -259,6 +266,53 @@ const S_EASY   = 'All easy at MAF. No structure this week.';
 
 const S_STRIDE_INTRO = 'Drop the HM-pace intervals this week — easy run with 2–3 × 20-sec relaxed strides to ease strides back in.';
 
+/* ---- 5-run week (from Oct 2026): Mon recovery · Tue weights · Wed tempo/quality · Thu easy+bursts · Fri weights · Sat easy · Sun long ---- */
+const WT_ITEMS = [
+  'Physio drills — glute mini-band, countermovement jumps, pogos',
+  'Legs — step-ups or lunges, squats',
+  'Upper body — your usual (no overhead pressing)'
+];
+function cad(wk){ return wk<=4 ? '~168' : '~170'; }
+function R(monday, wk, mon, wed, thu, sat, sun, opts={}){
+  const c=cad(wk);
+  const runs=[
+    {day:'MON', type:'maf',     title:'Recovery run',  km:mon, desc:'Very easy, flat route. First 10–15 min to a metronome at '+c+' spm.'},
+    {day:'WED', type:'quality', title:'Tempo',         km:wed, desc:'Easy start, then 2 × 8 min comfortably hard (short sentences possible) with 2 min easy between, easy finish. Normal stride here — cadence work stays on easy runs.'},
+    {day:'THU', type:'maf',     title:'Easy + bursts', km:thu, desc:'Easy run with 6 × 20-sec relaxed bursts, full easy recovery between. If Wednesday left anything grumbling, skip the bursts.'},
+    {day:'SAT', type:'maf',     title:'Easy',          km:sat, desc:'Easy and flat — parkrun with the kids counts. First 10–15 min at '+c+' spm.'},
+    {day:'SUN', type:'long',    title:'Long run',      km:sun, desc:'Easy and flat. First 10–15 min at '+c+' spm, then relax into it.'}
+  ];
+  return Object.assign({monday, phase:'Rebuild', rebuildWk:wk, five:true, total:runs.reduce((a,r)=>a+r.km,0), runs}, opts);
+}
+// Converts a 4-run block week (Tue/Thu/Sat/Sun) to the 5-run template, keeping its quality session and long run.
+function to5(w){
+  const [, q, sat0, lg] = w.runs;
+  const isRace = lg.km===42.2;
+  let mon, thu, sat;
+  const recover = w.phase==='Recover';
+  // Easy-day floors (Mon 5 / Thu 5 / Sat 4) so no easy run shrinks to a pointless 3km jog; recovery weeks after GC stay tiny.
+  const fM = recover?3:5, fT = recover?3:5, fS = recover?3:4;
+  if(isRace){ mon=6; thu=4; sat=3; }
+  else {
+    const rem = Math.max(0, w.total - q.km - lg.km);
+    mon = Math.max(fM, Math.round(rem*0.35));
+    thu = Math.max(fT, Math.round(rem*0.35));
+    sat = Math.max(fS, Math.round((rem-mon-thu)*10)/10);
+  }
+  if(recover && w.sydWk===1) mon = 0;
+  const runs=[
+    mon===0 ? {day:'MON', type:'maf', title:'Rest', km:0, desc:'The day after the marathon. Walk if you like — tick it when you\'ve put your feet up.'}
+            : {day:'MON', type:'maf', title:'Recovery run', km:mon, desc:'Very easy, flat. The legs\' day after the long run.'},
+    Object.assign({}, q, {day:'WED', km: isRace ? 5 : q.km, desc: isRace ? 'Easy 5km with 3 × 1 min at {MP} to remind the legs. Nothing more.' : q.desc}),
+    {day:'THU', type:'maf', title:'Easy', km:thu, desc: isRace ? 'Very easy. Feet up afterwards.' : 'Easy, with 4 × 20-sec relaxed bursts if the legs feel good. Plain easy if Wednesday bit.'},
+    Object.assign({}, sat0, {day:'SAT', km:sat, title: isRace ? 'Shakeout' : 'Easy', desc: isRace ? sat0.desc : 'Easy and flat — parkrun with the kids counts.'}),
+    Object.assign({}, lg, {day:'SUN'})
+  ];
+  const out = Object.assign({}, w, {five:true, runs});
+  out.total = isRace ? w.total : runs.reduce((a,r)=>a+r.km,0);
+  return out;
+}
+
 const CORE_WEEKS = [
 /* ---------- PHASE 0: TRANSITION (Surefoot cancelled — consolidate, don't push) ---------- */
 W('2026-07-27','Transition', 35, 8, 7,'Easy + first strides',S_STRIDE_INTRO,17,'Hold around here — no need to push further this week.',{transWk:1, note:'Surefoot\'s cancelled, so this replaces the taper/race/recovery cycle. Thursday drops the HM-pace intervals for easy + strides, Saturday stays short and genuinely easy, Sunday holds rather than builds. The fitness you\'ve already built isn\'t lost — it carries straight into an elevated base phase from 31 Aug.'}),
@@ -272,24 +326,24 @@ W('2026-09-07','Base', 38, 8, 9,'MAF + strides',S_STRIDE,17,'Easy throughout.'),
 W('2026-09-14','Base', 39, 8, 9,'MAF + strides',S_STRIDE,18,'Easy throughout.'),
 W('2026-09-21','Base', 39, 8, 9,'MAF + strides',S_STRIDE,18,'Easy throughout.',{hol:'September holidays'}),
 W('2026-09-28','Base', 35, 8, 9,'MAF + strides',S_STRIDE,14,'Flex Sunday — deliberately shorter for freshness. Enjoy the lie-in.',{hol:'September holidays', mafCheck:true, cutback:true, note:'📝 Sydney Marathon 2027 ballot opens around now — if the double\'s still on the cards, enter it. 120,000+ entered last year; a ballot entry costs nothing and keeps the option alive.'}),
-W('2026-10-05','Base', 40, 8,10,'MAF + strides',S_STRIDE,18,'Easy throughout.'),
-W('2026-10-12','Base', 40, 8,10,'MAF + strides',S_STRIDE,18,'Easy throughout.'),
-W('2026-10-19','Base', 41, 9,10,'MAF + strides',S_STRIDE,18,'Easy throughout.'),
-W('2026-10-26','Base', 37, 9,10,'MAF + strides',S_STRIDE,14,'Flex Sunday — deliberately shorter for freshness.',{mafCheck:true, cutback:true}),
-W('2026-11-02','Base', 41, 9,10,'MAF + strides',S_STRIDE,18,'Easy throughout.'),
-W('2026-11-09','Base', 42, 9,10,'MAF + strides',S_STRIDE,19,'Easy throughout.'),
-W('2026-11-16','Base', 42, 9,10,'MAF + strides',S_STRIDE,19,'Easy throughout.'),
-W('2026-11-23','Base', 40, 8, 9,'MAF + strides',S_STRIDE,17,'Sat swap: parkrun benchmark. Honest effort, not eyeballs-out.',{note:'BENCHMARK #1 — parkrun this Saturday. On-track: ~26:30 or better. Slightly lighter week so you\'re fresh for it.'}),
-W('2026-11-30','Base', 41, 8, 9,'MAF + strides',S_STRIDE,18,'Easy throughout.',{note:'📝 GC Marathon 2027 entries open early December — early-bird was $99 last year and it\'s the cheapest it will ever be. Join the Brisbane Half waitlist while you\'re at it.'}),
-W('2026-12-07','Base', 40, 8, 9,'MAF + strides',S_STRIDE,18,'Easy throughout.',{hol:'Summer holidays (BCE)', note:'📝 Entry check: signed up for Gold Coast yet? Don\'t let early-bird pricing lap you.'}),
-/* ---------- PHASE 2: SUMMER LAUNCHPAD ---------- */
-W('2026-12-14','Launchpad', 38, 6, 9,'10km time trial','BENCHMARK #2. Warm up 2km, then 10km at honest race effort.',18,'Easy. Pre-dawn start — heat rules apply.',{hol:'Summer holidays', note:'BENCHMARK #2 — 10km time trial. On-track for sub-4: under 55:00.'}),
-W('2026-12-21','Launchpad', 34, 6, 7,'MAF easy','Christmas week. Easy everything, enjoy the food.',14,'Relaxed. Family first this week.',{hol:'Summer holidays', note:'Sat 26th is Boxing Day — if it doesn\'t happen, it doesn\'t happen. No makeup needed, this week\'s already meant to be easy.'}),
-W('2026-12-28','Launchpad', 38, 6, 9,'20-min tempo','2km easy, 20 min comfortably hard (able to say short sentences), 2km easy.',18,'Easy at MAF. Fuel and hydrate — it is hot.',{hol:'Summer holidays'}),
-W('2027-01-04','Launchpad', 40, 7,10,'MAF + strides',S_STRIDE,18,'Easy. Practise pre-run breakfast timing.',{hol:'Summer holidays'}),
-W('2027-01-11','Launchpad', 36, 6,10,'20-min tempo','2km easy, 20 min comfortably hard, 2km easy.',14,'Flex Sunday — deliberately shorter for freshness before the final launchpad fortnight.',{hol:'Summer holidays', cutback:true}),
-W('2027-01-18','Launchpad', 42, 8,10,'MAF + strides',S_STRIDE,18,'Last big launchpad run. You should feel strong here.',{hol:'Summer holidays'}),
-W('2027-01-25','Launchpad', 30, 5, 7,'MAF easy','Deliberately light — school resumes 27 Jan.',14,'Short and social. Arrive at the block fresh, not cooked.',{mafCheck:true, note:'Light by design. The 22-week marathon block starts Monday. Last MAF check before the block — this one\'s the "did the base phase work?" reading.'}),
+/* ---------- PHASE R: REBUILD after injury (5 runs/week, distance is the only thing that grows) ---------- */
+R('2026-10-05', 1, 5,5,5,4,7,  {note:'Welcome back. Five runs a week, flat routes, and distance is the only thing that grows — pace and hills stay put for now. Pain rule: up to ~3/10 during or after is okay if it has settled by next morning. Above that, or creeping up week to week → repeat the week instead of progressing.'}),
+R('2026-10-12', 2, 5,5,5,4,8),
+R('2026-10-19', 3, 5,6,5,4,9),
+R('2026-10-26', 4, 4,5,4,4,7,  {cutback:true, note:'Cutback week — planned, not earned. Shorter everything so the new load settles.'}),
+R('2026-11-02', 5, 5,6,6,4,10, {note:'Cadence target steps up to ~170 spm on easy runs from this week.'}),
+R('2026-11-09', 6, 6,6,6,5,11),
+R('2026-11-16', 7, 6,7,6,5,12),
+R('2026-11-23', 8, 5,6,5,5,9,  {cutback:true, note:'Cutback week. Saturday 28 Nov: parkrun with the kids is perfect — keep it easy and fun, no time trial.'}),
+R('2026-11-30', 9, 6,7,7,5,13, {note:'📝 GC Marathon 2027 entries open early December — early-bird is the cheapest it will ever be. Join the Brisbane Half waitlist while you\'re at it.'}),
+R('2026-12-07',10, 6,7,7,5,14, {hol:'Summer holidays (BCE)', note:'📝 Entry check: signed up for Gold Coast yet?'}),
+R('2026-12-14',11, 7,7,7,5,15, {hol:'Summer holidays'}),
+R('2026-12-21',12, 5,6,5,4,11, {hol:'Summer holidays', cutback:true, note:'Christmas cutback. Fri 25th (weights) and Sat 26th (Boxing Day run) are both optional — skip them guilt-free.'}),
+R('2026-12-28',13, 7,7,7,5,15, {hol:'Summer holidays', note:'Heat rules: run early, carry water, and let pace drop on hot mornings — effort is what counts.'}),
+R('2027-01-04',14, 6,7,7,5,16, {hol:'Summer holidays'}),
+R('2027-01-11',15, 5,6,5,5,12, {hol:'Summer holidays', cutback:true}),
+R('2027-01-18',16, 7,8,7,5,16, {hol:'Summer holidays'}),
+R('2027-01-25',17, 6,6,6,5,14, {note:'School\'s back on Wednesday 27 Jan — a slightly lighter week on purpose. The 22-week marathon block starts Monday.'}),
 /* ---------- PHASE 3: MARATHON BLOCK (22 weeks) ---------- */
 W('2027-02-01','Survival', 36, 7, 8,'Strides session','Easy run with 6 × 30-sec strides, full recovery jogs.',16,'Easy long run. Block week 1 — nothing heroic.',{blockWk:1}),
 W('2027-02-08','Survival', 32, 6, 7,'Easy (camp-proof)','Easy MAF only. If camp eats this week, run what you can and move on.',14,'Flexible — shift to any day that works.',{blockWk:2, note:'Camp-proof week. A 3-run week with the long run intact still scores a win. 🎂 And Tuesday 9 Feb: the big 5-0 — your MAF cap ticks down to 135 automatically. Happy birthday.'}),
@@ -309,7 +363,7 @@ W('2027-05-10','Specific', 50, 4,13,'2 × 5km at MP','At {MP} with 1km float bet
 W('2027-05-17','Specific', 48, 4,11,'4 × 2km','At {CRUISE}/km, 600m jog recoveries.',28,'Easy at MAF.',{blockWk:16}),
 W('2027-05-24','Specific', 54, 4, 9,'25-min tempo','2km easy, 25 min comfortably hard, 2km easy.',32,'PEAK LONG RUN. Last 10km at MP. Full race-day dress rehearsal — kit, breakfast, gels.',{blockWk:17, note:'Peak week. The 32km Sunday is the single most important run of the block.'}),
 W('2027-05-31','Specific', 40, 6, 8,'3 × 1km at MP','Mini-taper week. Everything else very easy.',21.1,'BRISBANE MARATHON FESTIVAL HALF — race it. Target {HALF}.',{blockWk:18, race:'Brisbane Half · Sun 6 June', note:'BENCHMARK #3 — the go/no-go for your goal. Under {HALFHI} = green light.'}),
-W('2027-06-07','Taper', 42, 4,10,'3 × 2km at MP','Only once legs feel recovered from the half — Thursday at the earliest.',24,'Easy. Absorbing the race, not chasing fitness.',{blockWk:19}),
+W('2027-06-07','Taper', 42, 4,10,'3 × 2km at MP','Only once legs feel recovered from the half — swap with Thursday if they\'re still sore.',24,'Easy. Absorbing the race, not chasing fitness.',{blockWk:19}),
 W('2027-06-14','Taper', 42, 6,10,'2 × 3km at MP','At {MP} with 1km float.',22,'Easy at MAF.',{blockWk:20}),
 W('2027-06-21','Taper', 32, 5, 8,'MP touches','20 min easy with 3 × 4-min at MP inside it.',14,'Short, easy, done by breakfast.',{blockWk:21, hol:'Winter holidays from 26 Jun'}),
 W('2027-06-28','Race week', 18, 8, 5,'5km very easy','Nothing to gain now, plenty to lose. Feet up.',42.2,'RACE DAY — Gold Coast Marathon, 6:15am. {RACE10} to 10km, {MPnum} to 32km, then race.',{blockWk:22, race:'GOLD COAST MARATHON · Sun 4 July', hol:'Winter holidays',
@@ -334,10 +388,15 @@ W('2027-08-23','Sydney taper', 18, 8, 5,'5km very easy','Feet up. Sydney logisti
 SYD_WEEKS[SYD_WEEKS.length-1].runs[2].km = 3;
 SYD_WEEKS[SYD_WEEKS.length-1].runs[2].desc = 'Shakeout: 3km + 2 relaxed strides. Bag drop and bib sorted.';
 
+// From the marathon block on, every week runs on the 5-day template
+for(let i=0;i<CORE_WEEKS.length;i++){ if(CORE_WEEKS[i].blockWk) CORE_WEEKS[i]=to5(CORE_WEEKS[i]); }
+for(let i=0;i<SYD_WEEKS.length;i++){ SYD_WEEKS[i]=to5(SYD_WEEKS[i]); }
+
 let WEEKS = CORE_WEEKS;
 function applySydney(){ WEEKS = (state.sydney ? CORE_WEEKS.concat(SYD_WEEKS) : CORE_WEEKS); }
 
 const PHASE_INFO = {
+  'Rebuild':'Back from injury. Five runs a week on flat routes, and distance is the only thing that grows. Cutback every fourth week. Easy runs carry the physio cadence work.',
   'Transition':'Surefoot\'s cancelled — this block absorbs the fitness you\'ve already built rather than pushing further, before the base phase properly ramps from an elevated start.',
   'Base':'Almost all running at MAF heart rate. Boring on purpose — this is the engine build.',
   'Launchpad':'Summer holidays = time. Volume climbs, first tempo work appears. Beat the heat: run pre-dawn, obey the HR cap, ignore pace.',
@@ -481,7 +540,7 @@ function mondayOf(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate
 function parseDate(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
 function fmtRange(mon){ const a=parseDate(mon); const b=new Date(a); b.setDate(b.getDate()+6);
   const f=(d)=>d.toLocaleDateString('en-AU',{day:'numeric',month:'short'}); return f(a)+' – '+f(b); }
-const DOW_OFFSET={TUE:1,WED:2,THU:3,FRI:4,SAT:5,SUN:6};
+const DOW_OFFSET={MON:0,TUE:1,WED:2,THU:3,FRI:4,SAT:5,SUN:6};
 function shortDate(mondayStr, dow){ const d=parseDate(mondayStr); d.setDate(d.getDate()+(DOW_OFFSET[dow]||0)); return d.getDate()+'/'+(d.getMonth()+1); }
 function currentWeekIdx(){
   const now = mondayOf(new Date());
@@ -522,7 +581,7 @@ function renderHorizon(){
     const b=document.createElement('button');
     const h=Math.max(6, Math.round(w.total/maxT*56));
     b.style.height=h+'px';
-    let cls='hbar '+(w.sydWk?'syd':(w.phase==='Base'||w.phase==='Transition')?'base':w.phase==='Launchpad'?'launch':'block');
+    let cls='hbar '+(w.sydWk?'syd':(w.phase==='Base'||w.phase==='Transition')?'base':w.phase==='Rebuild'?'launch':w.phase==='Launchpad'?'launch':'block');
     if(w.hol) cls+=' hol';
     if(w.race) cls+=' race';
     const s=weekScore(i);
@@ -543,10 +602,11 @@ function renderHorizon(){
 function weekLabel(i){
   const w=WEEKS[i];
   if(w.transWk) return 'Transition week '+w.transWk+' of 5';
+  if(w.rebuildWk) return 'Rebuild week '+w.rebuildWk+' of 17';
   if(w.sydWk) return 'Sydney week '+w.sydWk+' of 8';
   if(w.blockWk) return 'Block week '+w.blockWk+' of 22';
-  const baseIdx = WEEKS.filter((x,j)=>j<=i && !x.blockWk && !x.transWk).length;
-  return 'Base week '+baseIdx+' of 22';
+  const baseIdx = WEEKS.filter((x,j)=>j<=i && x.phase==='Base').length;
+  return 'Base week '+baseIdx;
 }
 function renderWeek(){
   const i=viewing, w=WEEKS[i], cur=currentWeekIdx();
@@ -565,16 +625,35 @@ function renderWeek(){
   if(w.cutback) badges+=`<span class="badge cut">Cutback</span>`;
   if(w.race) badges+=`<span class="badge race">★ ${w.race}</span>`;
 
-  const wtHtml = ['WED','FRI'].map((d,wi)=>{
+  // Old 4-run weeks keep their Wed/Fri weights row; 5-run weeks get Tue/Fri strength cards with a checklist, in day order.
+  const wtHtml = w.five ? '' : ['WED','FRI'].map((d,wi)=>{
     const on = !!lg['w'+wi];
     return `<div class="wt"><span>${d} · Weights — upper + 10-min runner's lower</span>
       <button class="wcheck ${on?'on':''}" aria-label="Toggle ${d} weights" onclick="toggleWt(${i},${wi})">${on?'✓':''}</button></div>`;
   }).join('');
 
-  const runsHtml = w.runs.map((r,ri)=>{
+  const strengthCard = (d, wi) => {
+    const isToday = (i===cur && d===todayName);
+    const items = WT_ITEMS.map((txt,k)=>{
+      const on = !!lg['w'+wi+'_'+k];
+      return `<div class="chk-row"><span>${txt}</span>
+        <button class="wcheck ${on?'on':''}" aria-label="Toggle ${d}: ${txt}" onclick="toggleWtItem(${i},${wi},${k})">${on?'✓':''}</button></div>`;
+    }).join('');
+    return `<div class="session type-strength ${isToday?'today-hl':''}">
+      <div class="daychip">${d}<span class="daychip-date">${shortDate(w.monday,d)}</span></div>
+      <div class="s-main">
+        <div class="s-title">Strength + physio</div>
+        <div class="s-target">Drills first while fresh, then legs, then upper body.</div>
+        ${items}
+      </div>
+    </div>`;
+  };
+
+  const runCard = (r,ri)=>{
     const e=lg['r'+ri]||{};
     const isToday = (i===cur && r.day===todayName);
     const kmVal = (e.km===undefined||e.km===null)?'':e.km;
+    const cs = !!lg['cs'+ri];
     return `<div class="session type-${r.type} ${e.done?'done':''} ${isToday?'today-hl':''}">
       <div class="daychip">${r.day}<span class="daychip-date">${shortDate(w.monday,r.day)}</span></div>
       <div class="s-main">
@@ -584,11 +663,25 @@ function renderWeek(){
           <input class="km-input" type="number" inputmode="decimal" min="0" step="0.1" placeholder="${r.km}"
             value="${kmVal}" aria-label="Actual kilometres for ${r.day}" onchange="setKm(${i},${ri},this.value)">
           <span class="km-lbl">km actual</span>
+          <button class="cs-btn ${cs?'on':''}" aria-label="Cooldown and stretch done for ${r.day}" onclick="toggleCs(${i},${ri})">${cs?'✓ ':''}Cooldown + stretch</button>
         </div>
       </div>
       <button class="done-btn ${e.done?'on':''}" aria-label="Mark ${r.day} ${r.title} done" onclick="toggleRun(${i},${ri})">${e.done?'✓':''}</button>
     </div>`;
-  }).join('');
+  };
+
+  let runsHtml;
+  if(w.five){
+    const order=['MON','TUE','WED','THU','FRI','SAT','SUN'];
+    const slots=[];
+    w.runs.forEach((r,ri)=>slots.push({d:r.day, html:runCard(r,ri)}));
+    slots.push({d:'TUE', html:strengthCard('TUE',0)});
+    slots.push({d:'FRI', html:strengthCard('FRI',1)});
+    slots.sort((a,b)=>order.indexOf(a.d)-order.indexOf(b.d));
+    runsHtml = slots.map(s=>s.html).join('');
+  } else {
+    runsHtml = w.runs.map(runCard).join('');
+  }
 
   const mafCheckHtml = w.mafCheck ? (()=>{
     const on = !!lg['mc'];
@@ -620,11 +713,11 @@ function renderWeek(){
         <div class="kms">${doneKm.toFixed(doneKm%1?1:0)} / ${plannedKm.toFixed(plannedKm%1?1:0)}km logged</div>
       </div>
     </div>
-    <div class="maf-line">MAF cap: <b>${mafHR()} bpm</b> (180 − ${ageNow()}${state.mafBonus?' + 5':''}) · goal ${goalTimeStr()} → MP <b>${pf(mp())}/km</b></div>
+    <div class="maf-line">Easy runs at MAF effort: <b>≤${mafHR()} bpm</b> · goal ${goalTimeStr()} → MP <b>${pf(mp())}/km</b></div>
     ${runsHtml}
-    <div class="weights-row">${wtHtml}</div>
+    ${wtHtml?`<div class="weights-row">${wtHtml}</div>`:''}
     ${mafCheckHtml}
-    <p class="footnote">Score counts the four runs only (min of actual vs planned km — extra km never inflates it). Weights and MAF checks are tracked but don't move the percentage. Priority when time is short: long run › quality › MAF runs › weights. Cut-back triggers: easy pace slowing across weeks, a bad run of sleep/HRV, or a persistent niggle → insert an easy week anywhere, zero guilt — the plan absorbs it.</p>
+    <p class="footnote">Score counts runs only (min of actual vs planned km — extra km never inflates it). Strength, cooldowns and checks are tracked but don't move the percentage. ${w.five?'Pain rule: up to ~3/10 during or after a run is okay if it settles by next morning and isn\'t creeping up — otherwise repeat the week. One change at a time: distance grows, pace and hills wait. Your physio\'s advice beats this plan.':'Priority when time is short: long run › quality › easy runs › weights.'} Cut-back triggers: easy pace slowing across weeks, a bad run of sleep, or a persistent niggle → insert an easy week anywhere, zero guilt.</p>
   `;
 }
 
@@ -638,12 +731,14 @@ function renderPlan(){
       html+=`<div class="ov-phase">${w.phase} — ${PHASE_INFO[w.phase]||''}</div>`;
     }
     const s=weekScore(i);
-    const key = w.runs[1].title.replace('MAF + relax','MAF').replace('MAF easy','all easy');
+    const q = w.runs.find(r=>r.type==='quality') || w.runs[1];
+    const lgRun = w.runs.find(r=>r.type==='long') || w.runs[w.runs.length-1];
+    const key = q.title.replace('MAF + relax','MAF').replace('MAF easy','all easy') + (w.five?' · 5 runs':'');
     html+=`<button class="ov-row ${i===cur?'current':''}" onclick="viewing=${i};setTab('week');render()">
       <span class="ov-wk">W${i+1}</span>
       <span class="ov-mid">
         <span class="ov-dates">${fmtRange(w.monday)}${w.hol?' · ☀':''}${w.race?' · ★ '+w.race:''}</span>
-        <div class="ov-desc">${w.runs[3].km}km long · ${key}</div>
+        <div class="ov-desc">${lgRun.km}km long · ${key}</div>
       </span>
       <span class="ov-km">${w.total}km</span>
       <span class="ov-score ${s===null?'':scoreClass(s)}">${s===null?(i<cur?'·':''):s+'%'}</span>
@@ -683,9 +778,9 @@ function renderProgress(){
     </div>
     <div class="ov-phase">Last 16 scored weeks</div>
     <div class="hist-bars">${barHtml}</div>
-    <div class="ov-phase" style="margin-top:18px">Benchmarks</div>
-    <div class="ov-row" style="cursor:default"><span class="ov-wk">#1</span><span class="ov-mid"><span class="ov-dates">Late Nov 2026</span><div class="ov-desc">parkrun — on-track: ~26:30</div></span></div>
-    <div class="ov-row" style="cursor:default"><span class="ov-wk">#2</span><span class="ov-mid"><span class="ov-dates">Pre-Christmas 2026</span><div class="ov-desc">10km time trial — on-track: sub-55:00</div></span></div>
+    <div class="ov-phase" style="margin-top:18px">Milestones</div>
+    <div class="ov-row" style="cursor:default"><span class="ov-wk">🏃</span><span class="ov-mid"><span class="ov-dates">Sat 28 Nov 2026</span><div class="ov-desc">parkrun with the kids — easy, just for fun</div></span></div>
+    <div class="ov-row" style="cursor:default"><span class="ov-wk">16km</span><span class="ov-mid"><span class="ov-dates">Jan 2027</span><div class="ov-desc">Long run back to 16km, injury-free — ready for the block</div></span></div>
     <div class="ov-row" style="cursor:default"><span class="ov-wk">#3</span><span class="ov-mid"><span class="ov-dates">Sun 6 June 2027</span><div class="ov-desc">Brisbane Half — go/no-go: ${fmtDesc('{HALF}')}</div></span></div>
   `;
 }
@@ -738,7 +833,7 @@ function ensure(i){ state.log[i]=state.log[i]||{}; return state.log[i]; }
 function celebrate(i, before, ri, nowDone){
   const after=weekScore(i);
   if(after!==null && after>=100 && (before===null || before<100)) showToast(pick(PERFECT_MSGS), true);
-  else if(ri===3 && nowDone) showToast(pick(LONG_MSGS), false);
+  else if(WEEKS[i].runs[ri] && WEEKS[i].runs[ri].type==='long' && nowDone) showToast(pick(LONG_MSGS), false);
 }
 function toggleRun(i,ri){
   const before=weekScore(i);
@@ -755,6 +850,8 @@ function setKm(i,ri,v){
 function bumpGoal(d){ state.goalMin=Math.min(Math.max(state.goalMin+d,180),330); saveState(state); render(); }
 function toggleWt(i,wi){ const lg=ensure(i); lg['w'+wi]=!lg['w'+wi]; saveState(state); render(); }
 function toggleMc(i){ const lg=ensure(i); lg['mc']=!lg['mc']; saveState(state); render(); }
+function toggleWtItem(i,wi,k){ const lg=ensure(i); const key='w'+wi+'_'+k; lg[key]=!lg[key]; saveState(state); render(); }
+function toggleCs(i,ri){ const lg=ensure(i); lg['cs'+ri]=!lg['cs'+ri]; saveState(state); render(); }
 function nav(d){ viewing=Math.min(Math.max(viewing+d,0),WEEKS.length-1); render(); }
 function goToday(){ viewing=Math.max(currentWeekIdx(),0); render(); }
 function toggleBonus(){ state.mafBonus=!state.mafBonus; saveState(state); render(); }
